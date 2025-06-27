@@ -1014,14 +1014,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             setWillNotDraw(false);
         }
 
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            int width = MeasureSpec.getSize(widthMeasureSpec);
-            // Высота теперь 200dp вместо width + 3dp
-            int height = AndroidUtilities.dp(200);
-            setMeasuredDimension(width, height);
-        }
-
+//        @Override
+//        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+//            int width = MeasureSpec.getSize(widthMeasureSpec);
+//            // Высота теперь 200dp вместо width + 3dp
+//            int height = AndroidUtilities.dp(1000);
+//            setMeasuredDimension(width, height);
+//        }
+@Override
+protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+    setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(widthMeasureSpec) + AndroidUtilities.dp(3));
+}
 
         @Override
         public void setBackgroundColor(int color) {
@@ -1123,14 +1126,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         protected void onDraw(Canvas canvas) {
-            int height = 0;
+               final int height = (ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0));
             if (!String.valueOf(userId).equals(String.valueOf(UserConfig.getInstance(currentAccount).getClientUserId()))) {
-                height = (ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0)) + 1200;
-            } else {
-                height = (ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0));
-
+//                v = extraHeight + height + searchTransitionOffset + AndroidUtilities.dp(100);
+                extraHeight += AndroidUtilities.dp(50); // или любое другое значение
+//                invalidate();
             }
-            final float v = extraHeight + height + searchTransitionOffset;
+            float v = extraHeight + height + searchTransitionOffset;
 
             int y1 = (int) (v * (1.0f - mediaHeaderAnimationProgress));
 
@@ -3284,7 +3286,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 bottomButton[a] = new ButtonWithCounterView(context, resourcesProvider);
                 if (a == 0) {
                     bottomButtonPostText = new SpannableStringBuilder("c");
-                    bottomButtonPostText.setSpan(new ColoredImageSpan(R.drawable.filled_premium_camera), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    bottomButtonPostText.setSpan(new ColoredImageSpan(R.drawable.camera_new), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     bottomButtonPostText.append("  ").append(getString(R.string.StoriesAddPost));
                     bottomButton[a].setText(bottomButtonPostText, false);
                 } else {
@@ -3594,7 +3596,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
         }
 
-        videoCallItem = menu.addItem(video_call_item, R.drawable.profile_video);
+        videoCallItem = menu.addItem(video_call_item, R.drawable.video_new);
         videoCallItem.setContentDescription(LocaleController.getString(R.string.VideoCall));
         if (chatId != 0) {
             callItem = menu.addItem(call_item, R.drawable.msg_voicechat2);
@@ -6447,11 +6449,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             List<Integer> icons = new ArrayList<>();
             if (position == phoneRow) {
                 if (userInfo != null && userInfo.phone_calls_available) {
-                    icons.add(R.drawable.msg_calls);
+                    icons.add(R.drawable.call_new);
                     items.add(LocaleController.getString(R.string.CallViaTelegram));
                     actions.add(PHONE_OPTION_TELEGRAM_CALL);
                     if (Build.VERSION.SDK_INT >= 18 && userInfo.video_calls_available) {
-                        icons.add(R.drawable.msg_videocall);
+                        icons.add(R.drawable.video_new);
                         items.add(LocaleController.getString(R.string.VideoCallViaTelegram));
                         actions.add(PHONE_OPTION_TELEGRAM_VIDEO_CALL);
                     }
@@ -10563,7 +10565,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (isBot || getContactsController().contactsDict.get(userId) == null) {
                     if (MessagesController.isSupportUser(user)) {
                         if (userBlocked) {
-                            otherItem.addSubItem(block_contact, R.drawable.msg_block, LocaleController.getString(R.string.Unblock));
+                            otherItem.addSubItem(block_contact, R.drawable.block_new, LocaleController.getString(R.string.Unblock));
                         }
                         otherItem.addSubItem(add_shortcut, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut));
                     } else if (getDialogId() != UserObject.VERIFY) {
@@ -10572,12 +10574,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                         otherItem.addSubItem(add_shortcut, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut));
                         if (isBot) {
-                            otherItem.addSubItem(share, R.drawable.msg_share, LocaleController.getString(R.string.BotShare));
+                            otherItem.addSubItem(share, R.drawable.share_new, LocaleController.getString(R.string.BotShare));
                         } else {
                             otherItem.addSubItem(add_contact, R.drawable.msg_addcontact, LocaleController.getString(R.string.AddContact));
                         }
                         if (!TextUtils.isEmpty(user.phone)) {
-                            otherItem.addSubItem(share_contact, R.drawable.msg_share, LocaleController.getString(R.string.ShareContact));
+                            otherItem.addSubItem(share_contact, R.drawable.share_new, LocaleController.getString(R.string.ShareContact));
                         }
                         if (isBot) {
                             otherItem.addSubItem(bot_privacy, R.drawable.menu_privacy_policy, getString(R.string.BotPrivacyPolicy));
@@ -10586,14 +10588,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             } else {
                                 otherItem.hideSubItem(bot_privacy);
                             }
-                            otherItem.addSubItem(report, R.drawable.msg_report, LocaleController.getString(R.string.ReportBot)).setColors(getThemedColor(Theme.key_text_RedRegular), getThemedColor(Theme.key_text_RedRegular));
+                            otherItem.addSubItem(report, R.drawable.report_new, LocaleController.getString(R.string.ReportBot)).setColors(getThemedColor(Theme.key_text_RedRegular), getThemedColor(Theme.key_text_RedRegular));
                             if (!userBlocked) {
                                 otherItem.addSubItem(block_contact, R.drawable.msg_block2, LocaleController.getString(R.string.DeleteAndBlock)).setColors(getThemedColor(Theme.key_text_RedRegular), getThemedColor(Theme.key_text_RedRegular));
                             } else {
                                 otherItem.addSubItem(block_contact, R.drawable.msg_retry, LocaleController.getString(R.string.BotRestart));
                             }
                         } else {
-                            otherItem.addSubItem(block_contact, !userBlocked ? R.drawable.msg_block : R.drawable.msg_block, !userBlocked ? LocaleController.getString(R.string.BlockContact) : LocaleController.getString(R.string.Unblock));
+                            otherItem.addSubItem(block_contact, !userBlocked ? R.drawable.block_new : R.drawable.block_new, !userBlocked ? LocaleController.getString(R.string.BlockContact) : LocaleController.getString(R.string.Unblock));
                         }
                     }
                 } else {
@@ -10601,9 +10603,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         createAutoDeleteItem(context);
                     }
                     if (!TextUtils.isEmpty(user.phone)) {
-                        otherItem.addSubItem(share_contact, R.drawable.msg_share, LocaleController.getString(R.string.ShareContact));
+                        otherItem.addSubItem(share_contact, R.drawable.share_new, LocaleController.getString(R.string.ShareContact));
                     }
-                    otherItem.addSubItem(block_contact, !userBlocked ? R.drawable.msg_block : R.drawable.msg_block, !userBlocked ? LocaleController.getString(R.string.BlockContact) : LocaleController.getString(R.string.Unblock));
+                    otherItem.addSubItem(block_contact, !userBlocked ? R.drawable.block_new : R.drawable.block_new, !userBlocked ? LocaleController.getString(R.string.BlockContact) : LocaleController.getString(R.string.Unblock));
                     otherItem.addSubItem(edit_contact, R.drawable.msg_edit, LocaleController.getString(R.string.EditContact));
                     otherItem.addSubItem(delete_contact, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteContact));
                 }
@@ -10638,7 +10640,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (chatInfo != null) {
                     if (ChatObject.canManageCalls(chat) && chatInfo.call == null) {
-                        otherItem.addSubItem(call_item, R.drawable.msg_voicechat, chat.megagroup && !chat.gigagroup ? LocaleController.getString(R.string.StartVoipChat) : LocaleController.getString(R.string.StartVoipChannel));
+                        otherItem.addSubItem(call_item, R.drawable.live_stream_new, chat.megagroup && !chat.gigagroup ? LocaleController.getString(R.string.StartVoipChat) : LocaleController.getString(R.string.StartVoipChannel));
                         hasVoiceChatItem = true;
                     }
                     if ((chatInfo.can_view_stats || chatInfo.can_view_revenue || chatInfo.can_view_stars_revenue || getMessagesController().getStoriesController().canPostStories(getDialogId())) && topicId == 0) {
@@ -10653,7 +10655,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         otherItem.addSubItem(search_members, R.drawable.msg_search, LocaleController.getString(R.string.SearchMembers));
                     }
                     if (!chat.creator && !chat.left && !chat.kicked && !isTopic) {
-                        otherItem.addSubItem(leave_group, R.drawable.msg_leave, LocaleController.getString(R.string.LeaveMegaMenu));
+                        otherItem.addSubItem(leave_group, R.drawable.leave_new, LocaleController.getString(R.string.LeaveMegaMenu));
                     }
                     if (isTopic && ChatObject.canDeleteTopic(currentAccount, chat, topicId)) {
                         otherItem.addSubItem(delete_topic, R.drawable.msg_delete, LocaleController.getPluralString("DeleteTopics", 1));
@@ -10663,7 +10665,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         otherItem.addSubItem(channel_stories, R.drawable.msg_archive, LocaleController.getString(R.string.OpenChannelArchiveStories));
                     }
                     if (ChatObject.isPublic(chat)) {
-                        otherItem.addSubItem(share, R.drawable.msg_share, LocaleController.getString(R.string.BotShare));
+                        otherItem.addSubItem(share, R.drawable.share_new, LocaleController.getString(R.string.BotShare));
                     }
                     if (!BuildVars.IS_BILLING_UNAVAILABLE && !getMessagesController().premiumPurchaseBlocked()) {
                         StarsController.getInstance(currentAccount).loadStarGifts();
@@ -10671,16 +10673,16 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         otherItem.setSubItemShown(gift_premium, chatInfo != null && chatInfo.stargifts_available);
                     }
                     if (chatInfo != null && chatInfo.linked_chat_id != 0) {
-                        otherItem.addSubItem(view_discussion, R.drawable.msg_discussion, LocaleController.getString(R.string.ViewDiscussion));
+                        otherItem.addSubItem(view_discussion, R.drawable.message_new, LocaleController.getString(R.string.ViewDiscussion));
                     }
                     if (!currentChat.creator && !currentChat.left && !currentChat.kicked) {
-                        otherItem.addSubItem(leave_group, R.drawable.msg_leave, LocaleController.getString(R.string.LeaveChannelMenu));
+                        otherItem.addSubItem(leave_group, R.drawable.leave_new, LocaleController.getString(R.string.LeaveChannelMenu));
                     }
                 }
             } else {
                 if (chatInfo != null) {
                     if (ChatObject.canManageCalls(chat) && chatInfo.call == null) {
-                        otherItem.addSubItem(call_item, R.drawable.msg_voicechat, LocaleController.getString(R.string.StartVoipChat));
+                        otherItem.addSubItem(call_item, R.drawable.live_stream_new, LocaleController.getString(R.string.StartVoipChat));
                         hasVoiceChatItem = true;
                     }
                     ChatObject.Call call = getMessagesController().getGroupCall(chatId, false);
@@ -10715,7 +10717,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
 
         if (selfUser && !myProfile) {
-            otherItem.addSubItem(logout, R.drawable.msg_leave, LocaleController.getString(R.string.LogOut));
+            otherItem.addSubItem(logout, R.drawable.leave_new, LocaleController.getString(R.string.LogOut));
         }
         if (!isPulledDown) {
             otherItem.hideSubItem(gallery_menu_save);
@@ -11926,7 +11928,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         detailCell.setContentDescriptionValueFirst(true);
                     }
                     if (containsGift) {
-                        Drawable drawable = ContextCompat.getDrawable(detailCell.getContext(), R.drawable.msg_input_gift);
+                        Drawable drawable = ContextCompat.getDrawable(detailCell.getContext(), R.drawable.gift_new);
                         drawable.setColorFilter(new PorterDuffColorFilter(dontApplyPeerColor(getThemedColor(Theme.key_switch2TrackChecked), false), PorterDuff.Mode.MULTIPLY));
                         if (UserObject.areGiftsDisabled(userInfo)) {
                             detailCell.setImage(null);
@@ -12074,7 +12076,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
                             }
                         }
-                        textCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), ChannelMonetizationLayout.replaceTON(StarsIntroActivity.replaceStarsWithPlain(ssb, .7f), textCell.getTextView().getPaint()), R.drawable.msg_ton, true);
+                        textCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), ChannelMonetizationLayout.replaceTON(StarsIntroActivity.replaceStarsWithPlain(ssb, .7f), textCell.getTextView().getPaint()), R.drawable.gem_new, true);
                     } else if (position == blockedUsersRow) {
                         if (chatInfo != null) {
                             textCell.setTextAndValueAndIcon(LocaleController.getString(R.string.ChannelBlacklist), String.format("%d", Math.max(chatInfo.banned_count, chatInfo.kicked_count)), R.drawable.msg_user_remove, position != membersSectionRow - 1);
@@ -12084,7 +12086,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     } else if (position == addMemberRow) {
                         textCell.setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
                         boolean isNextPositionMember = position + 1 >= membersStartRow && position + 1 < membersEndRow;
-                        textCell.setTextAndIcon(LocaleController.getString(R.string.AddMember), R.drawable.msg_contact_add, membersSectionRow == -1 || isNextPositionMember);
+                        textCell.setTextAndIcon(LocaleController.getString(R.string.AddMember), R.drawable.join_new, membersSectionRow == -1 || isNextPositionMember);
                     } else if (position == sendMessageRow) {
                         textCell.setText(LocaleController.getString(R.string.SendMessageLocation), true);
                     } else if (position == addToContactsRow) {
@@ -12108,7 +12110,25 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setTextAndValueAndIcon(LocaleController.getString(R.string.Language), LocaleController.getCurrentLanguageName(), false, R.drawable.msg2_language, false);
                         textCell.setImageLeft(23);
                     } else if (position == notificationRow) {
-                        textCell.setTextAndIcon(LocaleController.getString(R.string.NotificationsAndSounds), R.drawable.msg2_notifications, true);
+
+                        TLRPC.Dialog dialog = MessagesController.getInstance((int) currentAccount).dialogs_dict.get(dialogId);
+                        if (dialog != null && dialog.notify_settings != null) {
+                            TLRPC.PeerNotifySettings settings = dialog.notify_settings;
+
+                            if (settings.mute_until == 0) {
+                                textCell.setTextAndIcon(LocaleController.getString(R.string.NotificationsAndSounds), R.drawable.mute_new, true);
+
+                            } else if (settings.mute_until > ConnectionsManager.getInstance(currentAccount).getCurrentTime()) {
+                                textCell.setTextAndIcon(LocaleController.getString(R.string.NotificationsAndSounds), R.drawable.unmute_new, true);
+
+                            } else {
+                                textCell.setTextAndIcon(LocaleController.getString(R.string.NotificationsAndSounds), R.drawable.mute_new, true);
+
+                            }
+                        } else {
+                            textCell.setTextAndIcon(LocaleController.getString(R.string.NotificationsAndSounds), R.drawable.mute_new, true);
+
+                        }
                     } else if (position == privacyRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.PrivacySettings), R.drawable.msg2_secret, true);
                     } else if (position == dataRow) {
@@ -12159,7 +12179,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setTextAndIcon(LocaleController.getString(R.string.TelegramBusiness), R.drawable.menu_shop, true);
                         textCell.setImageLeft(23);
                     } else if (position == premiumGiftingRow) {
-                        textCell.setTextAndIcon(LocaleController.getString(R.string.SendAGift), R.drawable.menu_gift, false);
+                        textCell.setTextAndIcon(LocaleController.getString(R.string.SendAGift), R.drawable.gift_new, false);
                         textCell.setImageLeft(23);
                     } else if (position == botPermissionLocation) {
                         textCell.setTextAndCheckAndColorfulIcon(LocaleController.getString(R.string.BotProfilePermissionLocation), botLocation != null && botLocation.granted(), R.drawable.filled_access_location, getThemedColor(Theme.key_color_green), botPermissionBiometry != -1);

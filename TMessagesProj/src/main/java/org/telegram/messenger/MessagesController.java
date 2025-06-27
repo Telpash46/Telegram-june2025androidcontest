@@ -1401,8 +1401,11 @@ public class MessagesController extends BaseController implements NotificationCe
         return mainPreferences;
     }
 
-    public static SharedPreferences getNotificationsSettings(int account) {
-        return getInstance(account).notificationsPreferences;
+    public static SharedPreferences getNotificationsSettings(long account) {
+        if (account > Integer.MAX_VALUE || account < Integer.MIN_VALUE) {
+            throw new IllegalArgumentException("Account ID is out of int range");
+        }
+        return getInstance((int) account).notificationsPreferences;
     }
 
     public static SharedPreferences getGlobalNotificationsSettings() {
