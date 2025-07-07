@@ -152,9 +152,14 @@ public class ActionBar extends FrameLayout {
     boolean blurredBackground;
     public Paint blurScrimPaint = new Paint();
     Rect rectTmp = new Rect();
+    private static int customHeight = 0;
 
     EllipsizeSpanAnimator ellipsizeSpanAnimator = new EllipsizeSpanAnimator(this);
 
+    public void setCustomHeight(int height) {
+        customHeight = height;
+        requestLayout();
+    }
     public ActionBar(Context context) {
         this(context, null);
     }
@@ -557,7 +562,7 @@ public class ActionBar extends FrameLayout {
             return menu;
         }
         menu = new ActionBarMenu(getContext(), this);
-        addView(menu, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.RIGHT));
+        addView(menu, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, AndroidUtilities.dp(100), Gravity.RIGHT));
         return menu;
     }
 
@@ -1646,6 +1651,9 @@ public class ActionBar extends FrameLayout {
     }
 
     public static int getCurrentActionBarHeight() {
+        if (customHeight > 0) {
+            return customHeight;
+        }
         if (AndroidUtilities.isTablet()) {
             return dp(64);
         } else if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y) {

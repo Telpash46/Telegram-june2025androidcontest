@@ -76,6 +76,7 @@ import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
+import android.util.DisplayMetrics;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
@@ -88,6 +89,7 @@ import android.view.VelocityTracker;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
+import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -378,7 +380,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     TimerDrawable autoDeleteItemDrawable;
     private ProfileStoriesView storyView;
     public ProfileGiftsView giftsView;
-
+    public static int getScreenWidth(Context context) {
+        DisplayMetrics metrics = new DisplayMetrics();
+        ((Activity) context).getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        return metrics.widthPixels;
+    }
     private View scrimView = null;
     private Paint scrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG) {
         @Override
@@ -712,6 +718,48 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             return headerShadowAlpha;
         }
     };
+    private Context context;
+
+    View createMenuButton1(int iconRes, String label) {
+        Context ctx = getParentActivity(); // или getContext()
+        if (ctx == null) {
+            Log.e("ProfileActivity", "context is null in createMenuButton1!");
+            return new View(getParentActivity()); // временная заглушка
+        }
+        LinearLayout container = new LinearLayout(ctx);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setGravity(Gravity.CENTER);
+
+        container.setPadding(AndroidUtilities.dp(12), AndroidUtilities.dp(8), AndroidUtilities.dp(100), AndroidUtilities.dp(8));
+        int alphaColor = Color.argb(100, 0, 0, 0); // 100 = прозрачность, 0..255
+        container.setBackground(new ColorDrawable(alphaColor));
+        // 👇 Задаем отступ справа (или слева, в зависимости от языка)
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LayoutHelper.MATCH_PARENT,
+                LayoutHelper.WRAP_CONTENT
+        );
+        layoutParams.setMarginEnd(AndroidUtilities.dp(500)); // или setMargins(left, top, right, bottom)
+        container.setLayoutParams(layoutParams);
+        ViewGroup.LayoutParams layoutParams1 = container.getLayoutParams();
+        if (layoutParams != null) {
+            layoutParams1.width = AndroidUtilities.dp(1000);
+            container.setLayoutParams(layoutParams1);
+        }
+        container.requestLayout();
+
+        ImageView icon = new ImageView(ctx);
+        icon.setImageResource(iconRes);
+        icon.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.SRC_IN));
+        container.addView(icon, LayoutHelper.createFrame(500, 50, Gravity.CENTER, 0, 0, 300, 0));
+
+        TextView text = new TextView(ctx);
+        text.setText(label);
+        text.setTextColor(getThemedColor(Theme.key_actionBarDefaultTitle));
+        text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+        container.addView(text, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 4, 300, 0));
+
+        return container;
+    }
 
     private PhotoViewer.PhotoViewerProvider provider = new PhotoViewer.EmptyPhotoViewerProvider() {
 
@@ -1014,17 +1062,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             setWillNotDraw(false);
         }
 
-//        @Override
+        //        @Override
 //        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 //            int width = MeasureSpec.getSize(widthMeasureSpec);
 //            // Высота теперь 200dp вместо width + 3dp
 //            int height = AndroidUtilities.dp(1000);
 //            setMeasuredDimension(width, height);
 //        }
-@Override
-protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-    setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(widthMeasureSpec) + AndroidUtilities.dp(3));
-}
+        @Override
+        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.getSize(widthMeasureSpec) + AndroidUtilities.dp(10));
+        }
 
         @Override
         public void setBackgroundColor(int color) {
@@ -1126,10 +1174,10 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
         @Override
         protected void onDraw(Canvas canvas) {
-               final int height = (ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0));
+            final int height = (ActionBar.getCurrentActionBarHeight() + (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0));
             if (!String.valueOf(userId).equals(String.valueOf(UserConfig.getInstance(currentAccount).getClientUserId()))) {
 //                v = extraHeight + height + searchTransitionOffset + AndroidUtilities.dp(100);
-                extraHeight += AndroidUtilities.dp(50); // или любое другое значение
+                extraHeight += AndroidUtilities.dp(100); // или любое другое значение
 //                invalidate();
             }
             float v = extraHeight + height + searchTransitionOffset;
@@ -3552,7 +3600,63 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             }
         };
         sharedMediaLayout.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.MATCH_PARENT));
+
         ActionBarMenu menu = actionBar.createMenu();
+        menu.setBackgroundColor(Color.TRANSPARENT);
+
+        Activity activity1 = null;
+        if (getParentActivity() != null) {
+            activity1 = getParentActivity();
+        } else if (context instanceof Activity) {
+            activity1 = (Activity) context;
+        }
+
+        if (activity1 != null) {
+            ViewGroup rootView = (ViewGroup) activity1.getWindow().getDecorView();
+
+            // Удаляем menu из старого родителя
+//            if (menu.getParent() instanceof ViewGroup) {
+//                ((ViewGroup) menu.getParent()).removeView(menu);
+//            }
+
+            // Добавляем menu в корень
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    (int) (getScreenWidth(getContext()) * 0.9),
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.TOP | Gravity.END
+            );
+            if (menu.getParent() instanceof ViewGroup) {
+                ((ViewGroup) menu.getParent()).removeView(menu);
+            }
+            rootView.addView(menu, params);
+
+
+            // Смещаем ниже actionBar
+            menu.setY(AndroidUtilities.dp(250)); // подстрой под себя
+            // Добавляем туда меню, как говорили
+        }
+// Создаём контейнер для горизонтального ряда
+//        LinearLayout row = new LinearLayout(context);
+//        row.setOrientation(LinearLayout.HORIZONTAL);
+//        row.setGravity(Gravity.CENTER);
+//        row.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+//        menu.addView(row);
+
+// Кнопка "Video"
+        ActionBarMenuItem videoItem = menu.addItem(101, R.drawable.video_new);
+        videoItem.setContentDescription(LocaleController.getString(R.string.VideoCall));
+        videoItem.addView(createMenuButton1(R.drawable.video_new, LocaleController.getString(R.string.VideoCall)));
+
+// Кнопка "Call"
+        ActionBarMenuItem callItem = menu.addItem(102, R.drawable.ic_call);
+        callItem.setContentDescription(LocaleController.getString(R.string.Call));
+        callItem.addView(createMenuButton1(R.drawable.ic_call, LocaleController.getString(R.string.Call)));
+
+// Кнопка "Edit"
+        ActionBarMenuItem editItem = menu.addItem(103, R.drawable.group_edit_profile);
+        editItem.setContentDescription(LocaleController.getString(R.string.Edit));
+        editItem.addView(createMenuButton1(R.drawable.group_edit_profile, LocaleController.getString(R.string.Edit)));
+
 
         if (userId == getUserConfig().clientUserId && !myProfile) {
             qrItem = menu.addItem(qr_button, R.drawable.msg_qr_mini, getResourceProvider());
@@ -3596,26 +3700,60 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             }
         }
 
-        videoCallItem = menu.addItem(video_call_item, R.drawable.video_new);
-        videoCallItem.setContentDescription(LocaleController.getString(R.string.VideoCall));
-        if (chatId != 0) {
-            callItem = menu.addItem(call_item, R.drawable.msg_voicechat2);
-            if (ChatObject.isChannelOrGiga(currentChat)) {
-                callItem.setContentDescription(LocaleController.getString(R.string.VoipChannelVoiceChat));
-            } else {
-                callItem.setContentDescription(LocaleController.getString(R.string.VoipGroupVoiceChat));
-            }
-        } else {
-            callItem = menu.addItem(call_item, R.drawable.ic_call);
-            callItem.setContentDescription(LocaleController.getString(R.string.Call));
-        }
-        if (myProfile) {
-            editItem = menu.addItem(edit_profile, R.drawable.group_edit_profile);
-            editItem.setContentDescription(LocaleController.getString(R.string.Edit));
-        } else {
-            editItem = menu.addItem(edit_channel, R.drawable.group_edit_profile);
-            editItem.setContentDescription(LocaleController.getString(R.string.Edit));
-        }
+//        videoCallItem = menu.addItem(video_call_item, R.drawable.video_new);
+//        videoCallItem.setContentDescription(LocaleController.getString(R.string.VideoCall));
+//        if (chatId != 0) {
+//            callItem = menu.addItem(call_item, R.drawable.msg_voicechat2);
+//            if (ChatObject.isChannelOrGiga(currentChat)) {
+//                callItem.setContentDescription(LocaleController.getString(R.string.VoipChannelVoiceChat));
+//            } else {
+//                callItem.setContentDescription(LocaleController.getString(R.string.VoipGroupVoiceChat));
+//            }
+//        } else {
+//            callItem = menu.addItem(call_item, R.drawable.ic_call);
+//            callItem.setContentDescription(LocaleController.getString(R.string.Call));
+//        }
+//        if (myProfile) {
+//            editItem = menu.addItem(edit_profile, R.drawable.group_edit_profile);
+//            editItem.setContentDescription(LocaleController.getString(R.string.Edit));
+//        } else {
+//            editItem = menu.addItem(edit_channel, R.drawable.group_edit_profile);
+//            editItem.setContentDescription(LocaleController.getString(R.string.Edit));
+//        }
+//        otherItem = menu.addItem(10, R.drawable.ic_ab_other, resourcesProvider);
+//        ttlIconView = new ImageView(context);
+//        ttlIconView.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.MULTIPLY));
+//        AndroidUtilities.updateViewVisibilityAnimated(ttlIconView, false, 0.8f, false);
+//        ttlIconView.setImageResource(R.drawable.msg_mini_autodelete_timer);
+//        otherItem.addView(ttlIconView, LayoutHelper.createFrame(12, 12, Gravity.CENTER_VERTICAL | Gravity.LEFT, 8, 2, 0, 0));
+//        otherItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
+
+
+
+
+
+//        row.addView(createMenuButton1(R.drawable.video_new, LocaleController.getString(R.string.VideoCall)));
+//
+//        if (chatId != 0) {
+//            if (ChatObject.isChannelOrGiga(currentChat)) {
+//                row.addView(createMenuButton1(R.drawable.msg_voicechat2, LocaleController.getString(R.string.VoipChannelVoiceChat)));
+//            } else {
+//                row.addView(createMenuButton1(R.drawable.msg_voicechat2, LocaleController.getString(R.string.VoipGroupVoiceChat)));
+//            }
+//        } else {
+//            row.addView(createMenuButton1(R.drawable.ic_call, LocaleController.getString(R.string.Call)));
+//        }
+//
+//        if (myProfile) {
+//            row.addView(createMenuButton1(R.drawable.group_edit_profile, LocaleController.getString(R.string.Edit)));
+//        } else {
+//            row.addView(createMenuButton1(R.drawable.group_edit_profile, LocaleController.getString(R.string.Edit)));
+//        }
+
+// Добавляем контейнер в меню
+//        menu.addView(row);
+
+// Оставляем кнопку с тремя точками как есть
         otherItem = menu.addItem(10, R.drawable.ic_ab_other, resourcesProvider);
         ttlIconView = new ImageView(context);
         ttlIconView.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultIcon), PorterDuff.Mode.MULTIPLY));
@@ -3623,7 +3761,6 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         ttlIconView.setImageResource(R.drawable.msg_mini_autodelete_timer);
         otherItem.addView(ttlIconView, LayoutHelper.createFrame(12, 12, Gravity.CENTER_VERTICAL | Gravity.LEFT, 8, 2, 0, 0));
         otherItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
-
         int scrollTo;
         int scrollToPosition = 0;
         Object writeButtonTag = null;
@@ -5693,7 +5830,18 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         checkPhotoDescriptionAlpha();
         avatarContainer.setScaleX(avatarScale);
         avatarContainer.setScaleY(avatarScale);
-        avatarContainer.setTranslationX(AndroidUtilities.lerp(avatarX, 0f, value));
+        avatarContainer.post(() -> {
+            avatarContainer.setPivotX(avatarContainer.getMeasuredWidth() / 2f);
+            avatarContainer.setPivotY(avatarContainer.getMeasuredHeight() / 2f);
+        });
+        float centerX = listView.getMeasuredWidth() / 2f;
+        float targetWidth = AndroidUtilities.lerp(AndroidUtilities.dpf2(42f), listView.getMeasuredWidth() / avatarScale, value);
+        float avatarCenterX = avatarX + avatarContainer.getMeasuredWidth() / 2f;
+        float targetX = centerX - targetWidth / 2f;
+
+        avatarContainer.setTranslationX(AndroidUtilities.lerp(avatarX, targetX, value));
+
+
         avatarContainer.setTranslationY(AndroidUtilities.lerp((float) Math.ceil(avatarY), 0f, value));
         avatarImage.setRoundRadius((int) AndroidUtilities.lerp(getSmallAvatarRoundRadius(), 0f, value));
         if (storyView != null) {
@@ -7548,7 +7696,11 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 }
 
                 avatarImage.setRoundRadius((int) AndroidUtilities.lerp(getSmallAvatarRoundRadius(), 0f, avatarAnimationProgress));
-                avatarContainer.setTranslationX(AndroidUtilities.lerp(avX, 0, avatarAnimationProgress));
+                float centerX = listView.getMeasuredWidth() / 2f;
+                float targetWidth = avatarContainer.getMeasuredWidth() * avatarScale;
+                float finalX = centerX - targetWidth / 2f;
+
+                avatarContainer.setTranslationX(AndroidUtilities.lerp(avX, finalX, avatarAnimationProgress));
 //                avatarContainer.setTranslationX(AndroidUtilities.lerp(avX, avatarX / 2, avatarAnimationProgress));
                 avatarContainer.setTranslationY(AndroidUtilities.lerp((float) Math.ceil(avY), 0f, avatarAnimationProgress));
                 float extra = (avatarContainer.getMeasuredWidth() - AndroidUtilities.dp(42)) * avatarScale;
@@ -7622,7 +7774,7 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                     nameX = (AndroidUtilities.displaySize.x - (AndroidUtilities.lerp((42f + 18f) / 42f, (42f + 42f + 18f) / 42f, Math.min(1f, expandProgress * 3f))) * nameScale) / 2f;
                     nameY = avatarContainer.getY() + avatarContainer.getHeight() + AndroidUtilities.dp(15);
                     onlineX = (AndroidUtilities.displaySize.x - (AndroidUtilities.lerp((42f + 18f) / 42f, (42f + 42f + 18f) / 42f, Math.min(1f, expandProgress * 3f))) * nameScale) / 2f;
-                    onlineY = avatarContainer.getY() + avatarContainer.getHeight() + AndroidUtilities.dp(15) + nameScale;
+                    onlineY = avatarContainer.getY() + avatarContainer.getHeight() + AndroidUtilities.dp(10) + nameScale;
                 } else {
                     nameX = -21 * AndroidUtilities.density * diff;
                     nameY = (float) Math.floor(avatarY) + AndroidUtilities.dp(1.3f) + AndroidUtilities.dp(7) * diff + titleAnimationsYDiff * (1f - avatarAnimationProgress);
@@ -9739,12 +9891,15 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     }
 
     private void updateEmojiStatusEffectPosition() {
-        animatedStatusView.setScaleX(nameTextView[1].getScaleX());
+        if (animatedStatusView != null) {
+            animatedStatusView.setScaleX(nameTextView[1].getScaleX());
         animatedStatusView.setScaleY(nameTextView[1].getScaleY());
         animatedStatusView.translate(
                 nameTextView[1].getX() + nameTextView[1].getRightDrawableX() * nameTextView[1].getScaleX(),
                 nameTextView[1].getY() + (nameTextView[1].getHeight() - (nameTextView[1].getHeight() - nameTextView[1].getRightDrawableY()) * nameTextView[1].getScaleY())
         );
+        }
+
     }
 
     private MessagesController.PeerColor peerColor;
@@ -10521,6 +10676,126 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
     }
 
     private void createActionBarMenu(boolean animated) {
+        Log.d("ProfileActivity", "createActionBarMenu called, topView=" + topView);
+        if (topView == null) {
+            Log.w("ProfileActivity", "createActionBarMenu: topView is null, skipping");
+            return;
+        }
+        Context context = topView.getContext();
+
+        // Удаляем предыдущий контейнер меню, если он есть
+        View existingContainer = topView.findViewWithTag("menu_container_tag");
+        if (existingContainer != null) {
+            topView.removeView(existingContainer);
+        }
+
+        // Создаём контейнер
+        LinearLayout menuContainer = new LinearLayout(context);
+        menuContainer.setOrientation(LinearLayout.VERTICAL);
+        menuContainer.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM
+        ));
+        menuContainer.setPadding(16, 16, 16, 16);
+//        menuContainer.setTag("menu_container_tag"); // чтобы можно было найти и удалить
+        topView.addView(menuContainer); // добавляем в корневой layout
+
+        // Теперь добавляем кнопки
+        if (userId != 0) {
+            TLRPC.User user = getMessagesController().getUser(userId);
+            if (user == null) return;
+
+            if (UserObject.isUserSelf(user)) {
+                if (myProfile) {
+                    addMenuButton(menuContainer, R.drawable.msg_edit, context.getString(R.string.EditInfo), v -> {
+                        // обработчик
+                    });
+
+                    if (imageUpdater != null) {
+                        addMenuButton(menuContainer, R.drawable.msg_addphoto, context.getString(R.string.AddPhoto), v -> {
+                            // обработчик
+                        });
+                    }
+
+                    addMenuButton(menuContainer, R.drawable.menu_profile_colors, context.getString(R.string.ProfileColorEdit), v -> {
+                        // обработчик
+                    });
+
+                    addMenuButton(menuContainer, R.drawable.menu_username_change, context.getString(R.string.ProfileUsernameEdit), v -> {
+                        // обработчик
+                    });
+
+                    addMenuButton(menuContainer, R.drawable.msg_link2, context.getString(R.string.ProfileCopyLink), v -> {
+                        // обработчик
+                    });
+                }
+            } else {
+                if (user.bot && user.bot_can_edit) {
+                    addMenuButton(menuContainer, R.drawable.msg_edit, context.getString(R.string.EditInfo), v -> {
+                        // обработчик
+                    });
+                }
+
+                if (userInfo != null && userInfo.phone_calls_available) {
+                    addMenuButton(menuContainer, R.drawable.ic_call, "Call", v -> {
+                        // обработчик
+                    });
+                }
+
+                if (!TextUtils.isEmpty(user.phone)) {
+                    addMenuButton(menuContainer, R.drawable.share_new, context.getString(R.string.ShareContact), v -> {
+                        // обработчик
+                    });
+                }
+            }
+        }
+
+        if (imageUpdater != null) {
+            addMenuButton(menuContainer, R.drawable.msg_openprofile, context.getString(R.string.SetAsMain), v -> {
+                // обработчик
+            });
+
+            addMenuButton(menuContainer, R.drawable.msg_gallery, context.getString(R.string.SaveToGallery), v -> {
+                // обработчик
+            });
+
+            addMenuButton(menuContainer, R.drawable.msg_delete, context.getString(R.string.Delete), v -> {
+                // обработчик
+            });
+        }
+    }
+
+    private void addMenuButton(LinearLayout container, int iconResId, String text, View.OnClickListener listener) {
+        Context context = container.getContext();
+
+        LinearLayout buttonLayout = new LinearLayout(context);
+        buttonLayout.setOrientation(LinearLayout.VERTICAL);
+        buttonLayout.setPadding(16, 8, 16, 8);
+        buttonLayout.setGravity(Gravity.CENTER);
+        buttonLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        ImageView icon = new ImageView(context);
+        icon.setImageResource(iconResId);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(64, 64)); // размер иконки
+        buttonLayout.addView(icon);
+
+        TextView label = new TextView(context);
+        label.setText(text);
+        label.setTextSize(12);
+        label.setGravity(Gravity.CENTER);
+        label.setTextColor(Color.BLACK); // можно поменять
+        buttonLayout.addView(label);
+
+        buttonLayout.setOnClickListener(listener);
+
+        container.addView(buttonLayout);
+    }
+
+    /*private void createActionBarMenu(boolean animated) {
         if (actionBar == null || otherItem == null) {
             return;
         }
@@ -10790,7 +11065,7 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             sharedMediaLayout.getSearchItem().requestLayout();
         }
         updateStoriesViewBounds(false);
-    }
+    }*/
 
     private void createAutoDeleteItem(Context context) {
         autoDeletePopupWrapper = new AutoDeletePopupWrapper(context, otherItem.getPopupLayout().getSwipeBack(), new AutoDeletePopupWrapper.Callback() {
@@ -11748,8 +12023,21 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             }
         }
 
+        private int extraMarginAdded = 0;
+//
+//        private int getTopMarginForPosition(int position) {
+//            if (extraMarginAdded) return AndroidUtilities.dp(8); // базовый отступ без доп. смещения
+//            if (position == phoneRow || position == birthdayRow || position == usernameRow) {
+//                extraMarginAdded = true;
+//                return AndroidUtilities.dp(63); // или нужное большое значение
+//            }
+//            return AndroidUtilities.dp(8);
+//        }
+
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+//            int extraMarginAdded = 0;  // В начале onBindViewHolder или метода
+
             switch (holder.getItemViewType()) {
                 case VIEW_TYPE_HEADER:
                     HeaderCell headerCell = (HeaderCell) holder.itemView;
@@ -11777,8 +12065,26 @@ protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 case VIEW_TYPE_TEXT_DETAIL_MULTILINE:
                 case VIEW_TYPE_TEXT_DETAIL:
                     TextDetailCell detailCell = (TextDetailCell) holder.itemView;
+
                     boolean containsQr = false;
                     boolean containsGift = false;
+//                    if (extraMarginAdded < 1) {
+//                        !!!!!!detailCell.setTranslationY(detailCell.getHeight() + AndroidUtilities.dp(38));
+//                        detailCell.setTranslationY(detailCell.getHeight() + AndroidUtilities.dp(7));
+                    detailCell.setTranslationY(detailCell.getHeight() + (detailCell.getHeight() / 2));
+
+
+
+//                        extraMarginAdded++;
+//                    }
+//                    ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) detailCell.getLayoutParams();
+//                    if (params != null) {
+////                        if (position == phoneRow) {
+//                        params.topMargin = AndroidUtilities.dp(300); // или сколько нужно
+////                        }
+//                        detailCell.setLayoutParams(params);
+//                        extraMarginAdded++;
+//                    }
                     if (position == birthdayRow) {
                         TLRPC.UserFull userFull = getMessagesController().getUserFull(userId);
                         if (userFull != null && userFull.birthday != null) {
